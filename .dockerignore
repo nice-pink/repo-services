@@ -1,0 +1,6 @@
+README.md
+Dockerfile
+bin/
+doc/
+push-docker-container.sh
+.env

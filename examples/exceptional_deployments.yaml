@@ -1,0 +1,11 @@
+apps:
+- name: test-envs
+  namespace: streaming
+  envs:
+  - name: dev
+    path: se/resources/test/test-envs/dev/deployment.yaml
+  - name: prod
+    path: base/resources/test/test-envs/prod/edge/deployment-edge.yaml
+- name: test-app-image
+  image: image
+  namespace: test

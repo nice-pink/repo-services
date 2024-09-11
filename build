@@ -1,0 +1,27 @@
+#!/bin/bash
+
+build_all() {
+    mkdir -p bin/
+
+    for d in cmd/*/ ; do
+        [ -L "${d%/}" ] && continue
+        echo "build $d"
+        cd $d
+        go build -o ../../bin
+        cd ../..
+        echo "done!"
+    done
+
+}
+
+if [ -z $1 ]
+then
+    build_all
+    exit 0
+fi
+
+echo "build cmd/$1"
+cd cmd/$1
+go build -o ../../bin
+cd ../..
+echo "done!"
