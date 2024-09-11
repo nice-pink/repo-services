@@ -49,14 +49,15 @@ func (h *ManifestHandler) GetCurrentTag(app models.App) string {
 func (h *ManifestHandler) SetTag(dest models.App) bool {
 	currentTag := h.GetCurrentTag(dest)
 	var err error
+	replaced := false
 	pattern := h.ImagePattern(dest)
 	tag := `${1}` + dest.Tag
 	if dest.File != "" {
-		err = filesystem.ReplaceRegexInFile(dest.File, pattern, tag, false)
+		replaced, err = filesystem.ReplaceRegexInFile(dest.File, pattern, tag, false)
 		// update e.g. labels, annotations, etc. - ignore error
 		filesystem.ReplaceInFile(dest.File, currentTag, dest.Tag, false)
 	} else {
-		err = filesystem.ReplaceRegexInAllFiles(dest.Path, true, pattern, tag)
+		replaced, err = filesystem.ReplaceRegexInAllFiles(dest.Path, true, pattern, tag)
 		// update e.g. labels, annotations, etc. - ignore error
 		filesystem.ReplaceInAllFiles(dest.Path, true, currentTag, dest.Tag)
 	}
@@ -66,8 +67,10 @@ func (h *ManifestHandler) SetTag(dest models.App) bool {
 		return false
 	}
 
-	// only if successfully updated tag
-	// h.AddTagToHistory(dest)
+	if replaced {
+		// only if successfully updated tag
+		h.AddTagToHistory(dest)
+	}
 
 	log.Info(util.LogPrefix(dest), "Updated tag:", dest.Tag)
 	return true
