@@ -15,9 +15,9 @@ func NewExceptionalHandler(filepath string) *ExceptionalHandler {
 	return &ExceptionalHandler{Filepath: filepath}
 }
 
-func (h *ExceptionalHandler) GetFilePath(app models.App) string {
+func (h *ExceptionalHandler) GetFileInfo(app models.App) (folder string, filename string) {
 	if h.Filepath == "" {
-		return ""
+		return "", ""
 	}
 
 	buf, err := os.ReadFile(h.Filepath)
@@ -28,18 +28,18 @@ func (h *ExceptionalHandler) GetFilePath(app models.App) string {
 	def := models.ExceptionalApps{}
 	err = yaml.Unmarshal(buf, &def)
 	if err != nil {
-		return ""
+		return "", ""
 	}
 	for _, appNode := range def.Apps {
 		if appNode.Name == app.Name {
 			for _, envNode := range appNode.Envs {
 				if envNode.Name == app.Env {
-					return envNode.Path
+					return envNode.Path, envNode.File
 				}
 			}
 		}
 	}
-	return ""
+	return "", ""
 }
 
 func (h *ExceptionalHandler) GetImage(app models.App) string {

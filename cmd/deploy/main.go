@@ -20,6 +20,7 @@ func main() {
 	var image = flag.String("image", "", "Image name.")
 	var tag = flag.String("tag", "", "Image tag to set.")
 	var imageFileName = flag.String("imageFileName", util.DS_IMAGE_FILE_NAME, "Name of files which contain the container image and version tag.")
+	var imageHistoryFileName = flag.String("imageHistoryFileName", util.DS_IMAGE_HISTORY_FILE_NAME, "Name of file which contain the container image history.")
 	var exceptionalAppsFile = flag.String("exceptionalAppsFile", util.DS_EXCEPTIONAL_APPS_FILE, "Filepath to file specifying exceptional apps. E.g. imageName != appName; path exceptional; etc.")
 	var srcFolder = flag.String("srcFolder", util.DS_SRC_FOLDER, "Source folder (e.g. of repo).")
 	flag.Parse()
@@ -37,7 +38,7 @@ func main() {
 	handler := manifest.NewManifestHandler(eh)
 
 	// run
-	app := handler.BuildApp(*appName, *env, *namespace, *image, *pathScheme, *base, *imageFileName, *srcFolder, *tag)
+	app := handler.BuildApp(*appName, *env, *namespace, *image, *pathScheme, *base, *imageFileName, *imageHistoryFileName, *srcFolder, *tag)
 	log.Info(util.GetAppDescription(app))
 	handler.GetCurrentTag(app)
 	handler.SetTag(app)

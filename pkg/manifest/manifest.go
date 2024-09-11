@@ -65,6 +65,10 @@ func (h *ManifestHandler) SetTag(dest models.App) bool {
 		log.Err(err, "Replacment error")
 		return false
 	}
+
+	// only if successfully updated tag
+	// h.AddTagToHistory(dest)
+
 	log.Info(util.LogPrefix(dest), "Updated tag:", dest.Tag)
 	return true
 }
@@ -78,7 +82,20 @@ func (h *ManifestHandler) SetTagWithSource(src, dest models.App) bool {
 	return h.SetTag(dest)
 }
 
+func (h *ManifestHandler) AddTagToHistory(app models.App) bool {
+	if app.History == "" {
+		return false
+	}
+	err := filesystem.AppendToFile(app.History, "- "+app.Tag, true)
+	return err != nil
+}
+
 // image
+
+func (h *ManifestHandler) updateWithExceptionalHandler(app *models.App, srcFolder, historyFileName string) {
+	h.updateImagePaths(app, srcFolder, historyFileName)
+	h.updateImageName(app)
+}
 
 func (h *ManifestHandler) getImageName(app models.App) string {
 	if h.exceptionalHandler != nil {
@@ -98,20 +115,31 @@ func (h *ManifestHandler) updateImageName(app *models.App) {
 	app.Image = image
 }
 
-func (h *ManifestHandler) getImageFile(app models.App, srcFolder string) string {
-	if h.exceptionalHandler != nil {
-		filepath := h.exceptionalHandler.GetFilePath(app)
-		if filepath != "" {
-			log.Info("Found exceptional path:", filepath)
-			return path.Join(srcFolder, filepath)
-		}
+func (h *ManifestHandler) getImageFile(app models.App, srcFolder string) (folder string, filename string) {
+	if h.exceptionalHandler == nil {
+		return app.Path, app.File
 	}
-	return path.Join(app.Path, app.File)
+
+	folder, filename = h.exceptionalHandler.GetFileInfo(app)
+	if folder != "" {
+		// log.Info("Found exceptional path:", folder)
+		folder = path.Join(srcFolder, folder)
+	} else {
+		folder = app.Path
+	}
+	if filename == "" {
+		filename = app.File
+	}
+	return folder, filename
 }
 
-func (h *ManifestHandler) updateImageFile(app *models.App, srcFolder string) {
-	imageFile := h.getImageFile(*app, srcFolder)
-	app.File = imageFile
+func (h *ManifestHandler) updateImagePaths(app *models.App, srcFolder, historyFileName string) {
+	folder, filename := h.getImageFile(*app, srcFolder)
+	app.Path = folder
+	app.File = path.Join(folder, filename)
+	if historyFileName != "" {
+		app.History = path.Join(folder, historyFileName)
+	}
 }
 
 func (h *ManifestHandler) ImagePattern(app models.App) string {
@@ -120,7 +148,7 @@ func (h *ManifestHandler) ImagePattern(app models.App) string {
 
 // app
 
-func (h *ManifestHandler) BuildApp(name, env, namespace, image, scheme, base, imageFileName, srcFolder, tag string) models.App {
+func (h *ManifestHandler) BuildApp(name, env, namespace, image, scheme, base, imageFileName, historyFileName, srcFolder, tag string) models.App {
 	folder := util.GetPathFromParameters(scheme, base, namespace, env, name)
 	folder = path.Join(srcFolder, folder)
 	app := models.App{
@@ -131,9 +159,9 @@ func (h *ManifestHandler) BuildApp(name, env, namespace, image, scheme, base, im
 		Tag:       tag,
 		Image:     image,
 		File:      imageFileName,
+		History:   historyFileName,
 	}
-	h.updateImageName(&app)
-	h.updateImageFile(&app, srcFolder)
+	h.updateWithExceptionalHandler(&app, srcFolder, historyFileName)
 
 	return app
 }

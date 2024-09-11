@@ -9,6 +9,7 @@ type ExceptionalApps struct {
 type ExceptionalEnvDef struct {
 	Name string
 	Path string
+	File string
 }
 
 // App
@@ -21,5 +22,6 @@ type App struct {
 	Image     string
 	File      string
 	Env       string
+	History   string
 	Envs      []ExceptionalEnvDef
 }
