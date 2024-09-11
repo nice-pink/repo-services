@@ -20,7 +20,7 @@ func main() {
 	var image = flag.String("image", "", "Image name.")
 	var tag = flag.String("tag", "", "Image tag to set.")
 	var imageFileName = flag.String("imageFileName", util.DS_IMAGE_FILE_NAME, "Name of files which contain the container image and version tag.")
-	var exceptionalAppsFile = flag.String("exceptionalAppsFile", "", "Filepath to file specifying exceptional apps. E.g. imageName != appName; path exceptional; etc.")
+	var exceptionalAppsFile = flag.String("exceptionalAppsFile", util.DS_EXCEPTIONAL_APPS_FILE, "Filepath to file specifying exceptional apps. E.g. imageName != appName; path exceptional; etc.")
 	var srcFolder = flag.String("srcFolder", util.DS_SRC_FOLDER, "Source folder (e.g. of repo).")
 	flag.Parse()
 

@@ -39,7 +39,7 @@ func (h *ManifestHandler) GetCurrentTag(app models.App) string {
 	pattern := h.ImagePattern(app)
 	tag, err := filesystem.GetRegexInFile(app.File, pattern, `${2}`, false)
 	if err != nil {
-		log.Err(err, "get image tag")
+		log.Err(err, "get image tag from: "+app.File)
 		return ""
 	}
 	log.Info(util.LogPrefix(app), "Current tag:", tag)
@@ -102,6 +102,7 @@ func (h *ManifestHandler) getImageFile(app models.App, srcFolder string) string 
 	if h.exceptionalHandler != nil {
 		filepath := h.exceptionalHandler.GetFilePath(app)
 		if filepath != "" {
+			log.Info("Found exceptional path:", filepath)
 			return path.Join(srcFolder, filepath)
 		}
 	}
@@ -136,12 +137,3 @@ func (h *ManifestHandler) BuildApp(name, env, namespace, image, scheme, base, im
 
 	return app
 }
-
-// Path      string
-// 	Name      string
-// 	Namespace string
-// 	Tag       string
-// 	Image     string
-// 	File      string
-// 	Env       string
-// 	Envs      []ExceptionalEnvDef
