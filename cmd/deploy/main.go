@@ -40,6 +40,5 @@ func main() {
 	// run
 	app := handler.BuildApp(*appName, *env, *namespace, *image, *pathScheme, *base, *imageFileName, *imageHistoryFileName, *srcFolder, *tag)
 	log.Info(util.GetAppDescription(app))
-	handler.GetCurrentTag(app)
 	handler.SetTag(app)
 }
