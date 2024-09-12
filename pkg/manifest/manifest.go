@@ -151,20 +151,20 @@ func (h *ManifestHandler) ImagePattern(app models.App) string {
 
 // app
 
-func (h *ManifestHandler) BuildApp(name, env, namespace, image, scheme, base, imageFileName, historyFileName, srcFolder, tag string) models.App {
-	folder := util.GetPathFromParameters(scheme, base, namespace, env, name)
-	folder = path.Join(srcFolder, folder)
+func (h *ManifestHandler) BuildApp(flags util.GeneralFlags, tag string) models.App {
+	folder := util.GetPathFromParameters(*flags.PathScheme, *flags.Base, *flags.Namespace, *flags.Env, *flags.App)
+	folder = path.Join(*flags.SrcPath, folder)
 	app := models.App{
 		Path:      folder,
-		Name:      name,
-		Namespace: namespace,
-		Env:       env,
+		Name:      *flags.App,
+		Namespace: *flags.Namespace,
+		Env:       *flags.Env,
 		Tag:       tag,
-		Image:     image,
-		File:      imageFileName,
-		History:   historyFileName,
+		Image:     *flags.Image,
+		File:      *flags.ImageFile,
+		History:   *flags.ImageHistoryFile,
 	}
-	h.updateWithExceptionalHandler(&app, srcFolder, historyFileName)
+	h.updateWithExceptionalHandler(&app, *flags.SrcPath, *flags.ImageHistoryFile)
 
 	return app
 }

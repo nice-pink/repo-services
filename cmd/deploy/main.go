@@ -12,18 +12,14 @@ import (
 
 func main() {
 	// parameters
-	var appName = flag.String("app", "", "App name.")
-	var namespace = flag.String("namespace", util.DS_NAMESPACE, "Namespace.")
-	var env = flag.String("env", util.DS_ENV, "App environment.")
-	var base = flag.String("base", util.DS_BASE, "Base path for apps.")
-	var pathScheme = flag.String("pathScheme", util.DS_PATH_SCHEME, "Scheme for apps paths.")
-	var image = flag.String("image", "", "Image name.")
+	flags := util.GetGeneralFlags()
 	var tag = flag.String("tag", "", "Image tag to set.")
-	var imageFileName = flag.String("imageFileName", util.DS_IMAGE_FILE_NAME, "Name of files which contain the container image and version tag.")
-	var imageHistoryFileName = flag.String("imageHistoryFileName", util.DS_IMAGE_HISTORY_FILE_NAME, "Name of file which contain the container image history.")
-	var exceptionalAppsFile = flag.String("exceptionalAppsFile", util.DS_EXCEPTIONAL_APPS_FILE, "Filepath to file specifying exceptional apps. E.g. imageName != appName; path exceptional; etc.")
-	var srcFolder = flag.String("srcFolder", util.DS_SRC_FOLDER, "Source folder (e.g. of repo).")
 	flag.Parse()
+
+	if *flags.Help {
+		flag.Usage()
+		os.Exit(0)
+	}
 
 	log.Info("*** Start")
 	log.Info(os.Args)
@@ -34,11 +30,11 @@ func main() {
 	}
 
 	// exceptional apps handler
-	eh := exceptional.NewExceptionalHandler(*exceptionalAppsFile)
+	eh := exceptional.NewExceptionalHandler(*flags.ExceptionalAppsFile)
 	handler := manifest.NewManifestHandler(eh)
 
 	// run
-	app := handler.BuildApp(*appName, *env, *namespace, *image, *pathScheme, *base, *imageFileName, *imageHistoryFileName, *srcFolder, *tag)
+	app := handler.BuildApp(flags, *tag)
 	log.Info(util.GetAppDescription(app))
 	handler.SetTag(app)
 }
