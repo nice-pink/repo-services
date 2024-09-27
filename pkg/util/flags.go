@@ -33,3 +33,19 @@ func GetGeneralFlags() GeneralFlags {
 		SrcPath:             flag.String("srcPath", DS_SRC_PATH, "Source folder (e.g. of repo)."),
 	}
 }
+
+type GitFlags struct {
+	GitPush    *bool
+	SshKeyPath *string
+	GitUser    *string
+	GitEmail   *string
+}
+
+func GetGitFlags() GitFlags {
+	return GitFlags{
+		GitPush:    flag.Bool("gitPush", false, "Git commit push src."),
+		SshKeyPath: flag.String("sshKeyPath", DS_SSH_KEY_PATH, "File path of ssh key file."),
+		GitUser:    flag.String("gitUser", DS_GIT_USER, "Git user name."),
+		GitEmail:   flag.String("gitEmail", DS_GIT_EMAIL, "Git email address."),
+	}
+}

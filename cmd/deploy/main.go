@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/nice-pink/goutil/pkg/log"
+	"github.com/nice-pink/goutil/pkg/repo"
 	"github.com/nice-pink/repo-services/pkg/exceptional"
 	"github.com/nice-pink/repo-services/pkg/manifest"
 	"github.com/nice-pink/repo-services/pkg/util"
@@ -14,6 +15,7 @@ func main() {
 	// parameters
 	flags := util.GetGeneralFlags()
 	var tag = flag.String("tag", "", "Image tag to set.")
+	gitFlags := util.GetGitFlags()
 	flag.Parse()
 
 	if *flags.Help {
@@ -37,4 +39,11 @@ func main() {
 	app := handler.BuildApp(flags, *tag)
 	log.Info(util.GetAppDescription(app))
 	handler.SetTag(app)
+
+	if *gitFlags.GitPush {
+		log.Info("Push to git.")
+		repoHandle := repo.NewRepoHandle(*gitFlags.SshKeyPath, *gitFlags.GitUser, *gitFlags.GitEmail)
+		msg := "Deploy " + *flags.App + "(" + *flags.Env + ") version: " + *tag
+		repoHandle.CommitPushLocalRepo(*flags.SrcPath, msg, true)
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/nice-pink/goutil/pkg/log"
+	"github.com/nice-pink/goutil/pkg/repo"
 	"github.com/nice-pink/repo-services/pkg/exceptional"
 	"github.com/nice-pink/repo-services/pkg/manifest"
 	"github.com/nice-pink/repo-services/pkg/util"
@@ -14,6 +15,7 @@ func main() {
 	// parameters
 	flags := util.GetGeneralFlags()
 	var srcEnv = flag.String("srcEnv", util.DS_SRC_ENV, "Src environment for promotion. [default: staging]")
+	gitFlags := util.GetGitFlags()
 	flag.Parse()
 
 	if *flags.Help {
@@ -39,4 +41,11 @@ func main() {
 	log.Info("Src app:", util.GetAppDescription(src))
 	log.Info("Dest app:", util.GetAppDescription(app))
 	handler.SetTagWithSource(src, app)
+
+	if *gitFlags.GitPush {
+		log.Info("Push to git.")
+		repoHandle := repo.NewRepoHandle(*gitFlags.SshKeyPath, *gitFlags.GitUser, *gitFlags.GitEmail)
+		msg := "Promote " + app.Name + "(" + app.Env + ") version: " + src.Tag
+		repoHandle.CommitPushLocalRepo(*flags.SrcPath, msg, true)
+	}
 }
