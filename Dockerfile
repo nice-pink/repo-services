@@ -12,13 +12,13 @@ RUN go mod tidy
 RUN go mod download
 
 # copy module code
-COPY build_all .
+COPY build .
 COPY cmd/ .
 COPY pkg/ .
 COPY test/ .
 
 # build all
-RUN ./build_all
+RUN ./build
 
 FROM cgr.dev/chainguard/glibc-dynamic:latest AS runner
 

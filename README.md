@@ -12,7 +12,7 @@
 
 1. Add executables as sub-folder into `cmd` folder. E.g. `cmd/exec`
 2. Open terminal and `cd` to base folder of this repo.
-3. Type `./build_all`.
+3. Type `./build`.
 4. All executables will be created in `bin` folder.
 
 # Test
