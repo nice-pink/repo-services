@@ -7,15 +7,14 @@ LABEL org.opencontainers.image.source="https://github.com/nice-pink/"
 WORKDIR /app
 
 # get go module ready
-COPY go.mod ./
-RUN go mod tidy
+COPY go.mod go.sum ./
 RUN go mod download
 
 # copy module code
 COPY build .
-COPY cmd/ .
-COPY pkg/ .
-COPY test/ .
+COPY cmd/ ./cmd/
+COPY pkg/ ./pkg/
+COPY test/ ./test/
 
 # build all
 RUN ./build
