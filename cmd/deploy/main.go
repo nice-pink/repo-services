@@ -38,12 +38,17 @@ func main() {
 	// run
 	app := handler.BuildApp(flags, *tag)
 	log.Info(util.GetAppDescription(app))
-	handler.SetTag(app)
+	if !handler.SetTag(app) {
+		os.Exit(2)
+	}
 
 	if *gitFlags.GitPush {
 		log.Info("Push to git.")
 		repoHandle := repo.NewRepoHandle(*gitFlags.SshKeyPath, *gitFlags.GitUser, *gitFlags.GitEmail)
 		msg := "Deploy " + *flags.App + "(" + *flags.Env + ") version: " + *tag
-		repoHandle.CommitPushLocalRepo(*flags.SrcPath, msg, true)
+		err := repoHandle.CommitPushLocalRepo(*flags.SrcPath, msg, true)
+		if err != nil {
+			os.Exit(2)
+		}
 	}
 }

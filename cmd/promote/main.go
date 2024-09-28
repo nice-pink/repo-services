@@ -40,12 +40,17 @@ func main() {
 	// log apps and set tag with source
 	log.Info("Src app:", util.GetAppDescription(src))
 	log.Info("Dest app:", util.GetAppDescription(app))
-	handler.SetTagWithSource(src, app)
+	if !handler.SetTagWithSource(src, app) {
+		os.Exit(2)
+	}
 
 	if *gitFlags.GitPush {
 		log.Info("Push to git.")
 		repoHandle := repo.NewRepoHandle(*gitFlags.SshKeyPath, *gitFlags.GitUser, *gitFlags.GitEmail)
 		msg := "Promote " + app.Name + "(" + app.Env + ") version: " + src.Tag
-		repoHandle.CommitPushLocalRepo(*flags.SrcPath, msg, true)
+		err := repoHandle.CommitPushLocalRepo(*flags.SrcPath, msg, true)
+		if err != nil {
+			os.Exit(2)
+		}
 	}
 }

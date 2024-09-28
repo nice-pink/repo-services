@@ -19,7 +19,8 @@ COPY test/ ./test/
 # build all
 RUN ./build
 
-FROM cgr.dev/chainguard/glibc-dynamic:latest AS runner
+# FROM cgr.dev/chainguard/glibc-dynamic:latest AS runner
+FROM cgr.dev/chainguard/git:latest-root-dev AS runner
 
 # Info
 LABEL org.opencontainers.image.authors="r@nice.pink"
