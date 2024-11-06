@@ -70,7 +70,7 @@ func UploadHttp(url string, filepath string, contentType string) error {
 
 	req, err := http.NewRequest(http.MethodPut, url, file)
 	if err != nil {
-		log.Err(err, "Could not create put request.")
+		logPutError(err)
 		return err
 	}
 	req.Header.Add("Content-Type", contentType)
@@ -78,7 +78,7 @@ func UploadHttp(url string, filepath string, contentType string) error {
 	client := &http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
-		log.Err(err, "Could not send request.")
+		logSendError(err)
 		return err
 	}
 	defer res.Body.Close()
@@ -101,7 +101,7 @@ func PostRequest(url string, body []byte, headers map[string]string, printBody b
 		req, err = http.NewRequest(http.MethodPost, url, reader)
 	}
 	if err != nil {
-		log.Err(err, "Could not create put request.")
+		logPutError(err)
 		return err
 	}
 
@@ -114,7 +114,7 @@ func PostRequest(url string, body []byte, headers map[string]string, printBody b
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Err(err, "Could not send request.")
+		logSendError(err)
 		return err
 	}
 	defer resp.Body.Close()
@@ -132,7 +132,7 @@ func GetRequest(url string, headers map[string]string) error {
 	// setup request
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		log.Err(err, "Could not create put request.")
+		logPutError(err)
 		return err
 	}
 
@@ -145,7 +145,7 @@ func GetRequest(url string, headers map[string]string) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Err(err, "Could not send request.")
+		logSendError(err)
 		return err
 	}
 	defer resp.Body.Close()
@@ -155,6 +155,16 @@ func GetRequest(url string, headers map[string]string) error {
 	log.Info(bodyString)
 
 	return nil
+}
+
+// errors
+
+func logPutError(err error) {
+	log.Err(err, "Could not create put request.")
+}
+
+func logSendError(err error) {
+	log.Err(err, "Could not send request.")
 }
 
 // array
