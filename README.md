@@ -1,3 +1,15 @@
+# Run
+
+## Docker
+
+```
+#  deploy
+docker run --entrypoint /app/deploy ghcr.io/nice-pink/repo-services:latest -help
+
+#  promote
+docker run --entrypoint /app/promote ghcr.io/nice-pink/repo-services:latest -help
+```
+
 # Build command line executables
 
 ## Build single executable

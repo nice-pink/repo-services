@@ -20,6 +20,7 @@ func main() {
 
 	if *flags.Help {
 		flag.Usage()
+		PrintExamples()
 		os.Exit(0)
 	}
 
@@ -31,7 +32,11 @@ func main() {
 
 	// build dest app
 	app := handler.BuildApp(flags, "")
-	handler.GetCurrentTag(app)
+	currentTag := handler.GetCurrentTag(app)
+	if currentTag == "" {
+		log.Error("Can't get current tag.")
+		os.Exit(2)
+	}
 
 	// build src app - overwrite env
 	flags.Env = srcEnv
@@ -53,4 +58,10 @@ func main() {
 			os.Exit(2)
 		}
 	}
+}
+
+func PrintExamples() {
+	log.Info()
+	log.Info("--- Examples:")
+	log.Info("bin/promote -app test-app -namespace test -srcPath examples/repo -base base/resources -srcEnv dev")
 }
