@@ -15,4 +15,5 @@ var (
 	DS_SSH_KEY_PATH            string = GetEnvString("DS_SSH_KEY_PATH", "")
 	DS_GIT_USER                string = GetEnvString("DS_GIT_USER", "")
 	DS_GIT_EMAIL               string = GetEnvString("DS_GIT_EMAIL", "")
+	// DS_UPDATE_ANNOTATIONS      bool   = GetEnvBool("DS_UPDATE_ANNOTATIONS", false)
 )

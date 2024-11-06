@@ -48,6 +48,10 @@ func (h *ManifestHandler) GetCurrentTag(app models.App) string {
 
 func (h *ManifestHandler) SetTag(dest models.App) bool {
 	currentTag := h.GetCurrentTag(dest)
+	if currentTag == "" {
+		log.Error("Can't find a current tag to replace.")
+		return false
+	}
 	var err error
 	replaced := false
 	pattern := h.ImagePattern(dest)

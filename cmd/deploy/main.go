@@ -52,3 +52,9 @@ func main() {
 		}
 	}
 }
+
+func PrintExamples() {
+	log.Info()
+	log.Info("--- Examples")
+	log.Info("deploy app version: ./deploy -app processing-engine-streaming -namespace streaming -env prod -tag abcd")
+}
