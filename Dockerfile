@@ -14,7 +14,7 @@ RUN go mod download
 COPY build .
 COPY cmd/ ./cmd/
 COPY pkg/ ./pkg/
-COPY test/ ./test/
+# COPY test/ ./test/
 
 # build all
 RUN ./build
