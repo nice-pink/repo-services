@@ -14,6 +14,16 @@ build_all() {
 
 }
 
+test() {
+    go test ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
+}
+
+# test
+echo "test"
+test
+
+# build all or some
+
 if [ -z $1 ]
 then
     build_all
