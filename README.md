@@ -50,3 +50,4 @@ promote dev app to prod:
 ```
 bin/promote -app test-app-image -namespace test -env prod -srcEnv dev -srcFolder examples/repo -base base/resources -exceptionalAppsFile examples/exceptional_deployments.yaml
 ```
+
