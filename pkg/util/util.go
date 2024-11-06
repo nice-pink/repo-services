@@ -11,6 +11,8 @@ import (
 	"github.com/nice-pink/goutil/pkg/log"
 )
 
+// env
+
 func GetEnvString(key string, fallback string) string {
 	value, ok := os.LookupEnv(key)
 	if !ok {
@@ -26,6 +28,18 @@ func GetEnvBool(key string, fallback bool) bool {
 	}
 	return strings.ToLower(value) == "true"
 }
+
+// array
+
+func RemoveFromStringArray(s []string, i int) []string {
+	if i >= len(s) {
+		return s
+	}
+	s[i] = s[len(s)-1]
+	return s[:len(s)-1]
+}
+
+// network
 
 func DownloadHttp(url string, filepath string) error {
 	log.Info("http download:", url)
@@ -165,11 +179,4 @@ func logPutError(err error) {
 
 func logSendError(err error) {
 	log.Err(err, "Could not send request.")
-}
-
-// array
-
-func RemoveFromStringArray(s []string, i int) []string {
-	s[i] = s[len(s)-1]
-	return s[:len(s)-1]
 }
