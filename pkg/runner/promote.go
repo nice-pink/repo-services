@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/nice-pink/goutil/pkg/log"
-	"github.com/nice-pink/goutil/pkg/repo"
 	"github.com/nice-pink/repo-services/pkg/exceptional"
 	"github.com/nice-pink/repo-services/pkg/manifest"
 	"github.com/nice-pink/repo-services/pkg/util"
@@ -33,13 +32,7 @@ func Promote(srcEnv, exceptionalAppsFile string, flags util.GeneralFlags, gitFla
 		return errors.New("cannot set tag")
 	}
 
-	if *gitFlags.GitPush {
-		log.Info("Push to git.")
-		repoHandle := repo.NewRepoHandle(*gitFlags.SshKeyPath, *gitFlags.GitUser, *gitFlags.GitEmail)
-		msg := "Promote " + app.Name + "(" + app.Env + ") version: " + src.Tag
-		if err := repoHandle.CommitPushLocalRepo(*flags.SrcPath, msg, true); err != nil {
-			return err
-		}
-	}
-	return nil
+	// git
+	msg := "Promote " + app.Name + "(" + app.Env + ") version: " + src.Tag
+	return util.GitPush(*flags.SrcPath, msg, gitFlags)
 }

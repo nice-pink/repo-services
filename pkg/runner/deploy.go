@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/nice-pink/goutil/pkg/log"
-	"github.com/nice-pink/goutil/pkg/repo"
 	"github.com/nice-pink/repo-services/pkg/exceptional"
 	"github.com/nice-pink/repo-services/pkg/manifest"
 	"github.com/nice-pink/repo-services/pkg/util"
@@ -27,13 +26,7 @@ func Deploy(tag, exceptionalAppsFile string, flags util.GeneralFlags, gitFlags u
 		return errors.New("could not set tag")
 	}
 
-	if *gitFlags.GitPush {
-		log.Info("Push to git.")
-		repoHandle := repo.NewRepoHandle(*gitFlags.SshKeyPath, *gitFlags.GitUser, *gitFlags.GitEmail)
-		msg := "Deploy " + *flags.App + "(" + *flags.Env + ") version: " + tag
-		if err := repoHandle.CommitPushLocalRepo(*flags.SrcPath, msg, true); err != nil {
-			return err
-		}
-	}
-	return nil
+	// git
+	msg := "Deploy " + *flags.App + "(" + *flags.Env + ") version: " + tag
+	return util.GitPush(*flags.SrcPath, msg, gitFlags)
 }
