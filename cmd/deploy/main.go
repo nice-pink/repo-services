@@ -5,9 +5,7 @@ import (
 	"os"
 
 	"github.com/nice-pink/goutil/pkg/log"
-	"github.com/nice-pink/goutil/pkg/repo"
-	"github.com/nice-pink/repo-services/pkg/exceptional"
-	"github.com/nice-pink/repo-services/pkg/manifest"
+	"github.com/nice-pink/repo-services/pkg/runner"
 	"github.com/nice-pink/repo-services/pkg/util"
 )
 
@@ -20,6 +18,7 @@ func main() {
 
 	if *flags.Help {
 		flag.Usage()
+		PrintExamples()
 		os.Exit(0)
 	}
 
@@ -32,25 +31,8 @@ func main() {
 		os.Exit(2)
 	}
 
-	// exceptional apps handler
-	eh := exceptional.NewExceptionalHandler(*flags.ExceptionalAppsFile)
-	handler := manifest.NewManifestHandler(eh)
-
-	// run
-	app := handler.BuildApp(flags, *tag)
-	log.Info(util.GetAppDescription(app))
-	if !handler.SetTag(app) {
+	if err := runner.Deploy(*tag, *flags.ExceptionalAppsFile, flags, gitFlags); err != nil {
 		os.Exit(2)
-	}
-
-	if *gitFlags.GitPush {
-		log.Info("Push to git.")
-		repoHandle := repo.NewRepoHandle(*gitFlags.SshKeyPath, *gitFlags.GitUser, *gitFlags.GitEmail)
-		msg := "Deploy " + *flags.App + "(" + *flags.Env + ") version: " + *tag
-		err := repoHandle.CommitPushLocalRepo(*flags.SrcPath, msg, true)
-		if err != nil {
-			os.Exit(2)
-		}
 	}
 }
 
