@@ -56,9 +56,9 @@ func (h *ManifestHandler) SetTag(dest models.App) bool {
 	replaced := false
 	pattern := h.ImagePattern(dest)
 	if dest.File != "" {
-		replaced, err = h.SetTagInFileWithPattern(dest.Tag, currentTag, dest.File, pattern)
+		replaced, err = SetTagInFileWithPattern(dest.Tag, currentTag, dest.File, pattern)
 	} else {
-		replaced, err = h.SetTagInFolderWithPattern(dest.Tag, currentTag, dest.Path, pattern)
+		replaced, err = SetTagInFolderWithPattern(dest.Tag, currentTag, dest.Path, pattern)
 	}
 
 	if err != nil {
@@ -75,7 +75,7 @@ func (h *ManifestHandler) SetTag(dest models.App) bool {
 	return true
 }
 
-func (h *ManifestHandler) SetTagInFileWithPattern(tag, currentTag, filepath, pattern string) (replaced bool, err error) {
+func SetTagInFileWithPattern(tag, currentTag, filepath, pattern string) (replaced bool, err error) {
 	replaced, err = filesystem.ReplaceRegexInFile(filepath, pattern, `${1}`+tag, false)
 	if currentTag != "" {
 		// update e.g. labels, annotations, etc. - ignore error
@@ -84,7 +84,7 @@ func (h *ManifestHandler) SetTagInFileWithPattern(tag, currentTag, filepath, pat
 	return replaced, err
 }
 
-func (h *ManifestHandler) SetTagInFolderWithPattern(tag, currentTag, folder, pattern string) (replaced bool, err error) {
+func SetTagInFolderWithPattern(tag, currentTag, folder, pattern string) (replaced bool, err error) {
 	replaced, err = filesystem.ReplaceRegexInAllFiles(folder, true, pattern, `${1}`+tag)
 	if currentTag != "" {
 		// update e.g. labels, annotations, etc. - ignore error
