@@ -37,17 +37,25 @@ func GetGeneralFlags() GeneralFlags {
 }
 
 type GitFlags struct {
-	GitPush    *bool
+	Push       *bool
+	Shallow    *bool
 	SshKeyPath *string
-	GitUser    *string
-	GitEmail   *string
+	User       *string
+	Email      *string
+	Url        *string
+	Branch     *string
+	//Commit  *string
 }
 
 func GetGitFlags() GitFlags {
 	return GitFlags{
-		GitPush:    flag.Bool("gitPush", false, "Git commit push src."),
+		Push:       flag.Bool("gitPush", false, "Git commit push src."),
+		Shallow:    flag.Bool("gitShallow", false, "Git shallow clone."),
 		SshKeyPath: flag.String("sshKeyPath", DS_SSH_KEY_PATH, "File path of ssh key file."),
-		GitUser:    flag.String("gitUser", DS_GIT_USER, "Git user name."),
-		GitEmail:   flag.String("gitEmail", DS_GIT_EMAIL, "Git email address."),
+		User:       flag.String("gitUser", DS_GIT_USER, "Git user name."),
+		Email:      flag.String("gitEmail", DS_GIT_EMAIL, "Git email address."),
+		Url:        flag.String("gitUrl", "", "Git url."),
+		Branch:     flag.String("gitBranch", "", "Git branch to checkout."),
+		//Commit:  flag.String("gitCommit", "", "Git commit to checkout."),
 	}
 }
