@@ -17,10 +17,10 @@ func GitPush(repoPath, msg string, gitFlags GitFlags) error {
 }
 
 func GitClone(url, baseFolder string, flags GitFlags) error {
-	if *flags.Url != "" {
+	if url != "" {
 		log.Info("Git clone.")
 		repoHandle := repo.NewRepoHandle(*flags.SshKeyPath, *flags.User, *flags.Email)
-		if err := repoHandle.Clone(*flags.Url, baseFolder, *flags.Branch, *flags.Shallow, false); err != nil {
+		if err := repoHandle.Clone(url, baseFolder, *flags.Branch, *flags.Shallow, false); err != nil {
 			return err
 		}
 	}
