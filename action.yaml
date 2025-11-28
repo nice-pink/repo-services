@@ -55,18 +55,33 @@ inputs:
     default: "false"
 
 runs:
-  using: "composite"
-  steps:
-    - name: Deploy image
-      shell: sh
-      run: |
-        go run cmd/deploy/main.go \
-          -app "${{ inputs.app }}" \
-          -namespace "${{ inputs.namespace }}" \
-          -env "${{ inputs.env }}" \
-          -base "${{ inputs.base }}" \
-          -cluster "${{ inputs.cluster }}" \
-          -src-path "${{ inputs.src-path }}" \
-          -git-push "${{ inputs.git-push }}" \
-          -tag "${{ inputs.image-tag }}" \
-          -path-scheme "${{ inputs.path-scheme }}"
+  using: 'docker'
+  image: 'ghcr.io/nice-pink/repo-services-deploy:latest'
+  entrypoint: 'app/deploy'
+  args:
+  - -app "${{ inputs.app }}"
+  - -namespace "${{ inputs.namespace }}"
+  - -env "${{ inputs.env }}"
+  - -base "${{ inputs.base }}"
+  - -cluster "${{ inputs.cluster }}"
+  - -src-path "${{ inputs.src-path }}"
+  - -git-push "${{ inputs.git-push }}"
+  - -tag "${{ inputs.image-tag }}"
+  - -path-scheme "${{ inputs.path-scheme }}"
+  
+# runs:
+#   using: "composite"
+#   steps:
+#     - name: Deploy image
+#       shell: sh
+#       run: |
+#         go run ${{ github.action_path }}/cmd/deploy/main.go \
+#           -app "${{ inputs.app }}" \
+#           -namespace "${{ inputs.namespace }}" \
+#           -env "${{ inputs.env }}" \
+#           -base "${{ inputs.base }}" \
+#           -cluster "${{ inputs.cluster }}" \
+#           -src-path "${{ inputs.src-path }}" \
+#           -git-push "${{ inputs.git-push }}" \
+#           -tag "${{ inputs.image-tag }}" \
+#           -path-scheme "${{ inputs.path-scheme }}"
