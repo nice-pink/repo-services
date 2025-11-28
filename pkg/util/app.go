@@ -9,5 +9,10 @@ func LogPrefix(app models.App) string {
 }
 
 func GetAppDescription(app models.App) string {
-	return app.Namespace + "/" + app.Name + "(" + app.Env + "):" + app.Tag + " Path: " + app.File + ", Image: " + app.Image
+	output := ""
+	if app.Namespace != "" {
+		output += app.Namespace + "/"
+	}
+	output += app.Name + "(" + app.Env + "):" + app.Tag + " Path: " + app.File + ", Image: " + app.Image
+	return output
 }

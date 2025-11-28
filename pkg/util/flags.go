@@ -15,6 +15,7 @@ type GeneralFlags struct {
 	PathScheme          *string
 	ExceptionalAppsFile *string
 	SrcPath             *string
+	VersionInfo         *string
 	// UpdateVersionAnnotation *bool
 }
 
@@ -32,6 +33,7 @@ func GetGeneralFlags() GeneralFlags {
 		PathScheme:          flag.String("pathScheme", DS_PATH_SCHEME, "Scheme for apps paths. [default: {base}/{namespace}/{app}/{env}]"),
 		ExceptionalAppsFile: flag.String("exceptionalAppsFile", DS_EXCEPTIONAL_APPS_FILE, "Filepath to file specifying exceptional apps. E.g. imageName != appName; path exceptional; etc."),
 		SrcPath:             flag.String("srcPath", DS_SRC_PATH, "Source folder (e.g. of repo)."),
+		VersionInfo:         flag.String("versionInfo", "", "Version info for app added as annotation in deployment. E.g. 'new version with new features'"),
 		// UpdateVersionAnnotation: flag.Bool("updateVersionAnnotation", DS_UPDATE_ANNOTATIONS, "Update imageVersion annotation in version file."),
 	}
 }

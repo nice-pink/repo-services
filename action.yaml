@@ -1,0 +1,72 @@
+name: 'Nice Repo Services: deploy and promote'
+description: 'Deploy and promote a container image through GitOps / DevOps repository.'
+
+branding:
+  icon: power
+  color: purple
+
+inputs:
+  image-tag:
+    description: "Tag of image to deploy"
+    required: true
+  
+  path-scheme:
+    description: "Path scheme for app. E.g. {base}/{namespace}/{app}/{env}. Default: {base}/{namespace}/{app}/{env}"
+    required: false
+    default: "{base}/{namespace}/{app}/{env}"
+
+  image-file:
+    description: "Name of file which contain the container image and version tag. Default: deployment.yaml"
+    required: false
+    default: "deployment.yaml"
+
+  app:
+    description: "Name of app in path"
+    required: true
+
+  env:
+    description: "Environment of app if needed for path scheme."
+    required: false
+    default: ""
+
+  base:
+    description: "Base path for app if needed for path scheme."
+    required: false
+    default: ""
+
+  namespace:
+    description: "Namespace of app if needed for path scheme."
+    required: false
+    default: ""
+
+  cluster:
+    description: "Cluster of app if needed for path scheme."
+    required: false
+    default: ""
+
+  src-path:
+    description: "Source path of GitOps repository."
+    required: false
+    default: ""
+
+  git-push:
+    description: "Push changes to GitOps repository."
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Deploy image
+      shell: sh
+      run: |
+        go run cmd/deploy/main.go \
+          -app "${{ inputs.app }}" \
+          -namespace "${{ inputs.namespace }}" \
+          -env "${{ inputs.env }}" \
+          -base "${{ inputs.base }}" \
+          -cluster "${{ inputs.cluster }}" \
+          -src-path "${{ inputs.src-path }}" \
+          -git-push "${{ inputs.git-push }}" \
+          -tag "${{ inputs.image-tag }}" \
+          -path-scheme "${{ inputs.path-scheme }}"
