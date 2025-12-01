@@ -27,27 +27,27 @@ inputs:
   env:
     description: "Environment of app if needed for path scheme."
     required: false
-    default: ""
+    default: '""'
 
   base:
     description: "Base path for app if needed for path scheme."
     required: false
-    default: ""
+    default: '""'
 
   namespace:
     description: "Namespace of app if needed for path scheme."
     required: false
-    default: ""
+    default: '""'
 
   cluster:
     description: "Cluster of app if needed for path scheme."
     required: false
-    default: ""
+    default: '""'
 
   src-path:
     description: "Source path of GitOps repository."
     required: false
-    default: ""
+    default: '""'
 
   git-push:
     description: "Push changes to GitOps repository."
