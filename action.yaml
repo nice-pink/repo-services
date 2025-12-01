@@ -95,7 +95,7 @@ runs:
   - -gitBranch=${{ inputs.git-branch }}
   - -gitUser=${{ inputs.git-user }}
   - -gitEmail=${{ inputs.git-email }}
-  - -gitShallowCheckout=${{ inputs.git-shallow-checkout }}
+  - -gitShallow=${{ inputs.git-shallow-checkout }}
   - -gitToken=${{ inputs.git-token }}
   - -gitPush
   
