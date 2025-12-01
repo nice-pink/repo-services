@@ -59,14 +59,14 @@ runs:
   image: 'docker://ghcr.io/nice-pink/repo-services-deploy:latest'
   entrypoint: '/app/bin/deploy'
   args:
-  - -app="${{ inputs.app }}"
-  - -namespace="${{ inputs.namespace }}"
-  - -env="${{ inputs.env }}"
-  - -base="${{ inputs.base }}"
-  - -cluster="${{ inputs.cluster }}"
-  - -srcPath="${{ inputs.src-path }}"
-  - -tag="${{ inputs.image-tag }}"
-  - -pathScheme="${{ inputs.path-scheme }}"
+  - -app=${{ inputs.app }}
+  - -namespace=${{ inputs.namespace }}
+  - -env=${{ inputs.env }}
+  - -base=${{ inputs.base }}
+  - -cluster=${{ inputs.cluster }}
+  - -srcPath=${{ inputs.src-path }}
+  - -tag=${{ inputs.image-tag }}
+  - -pathScheme=${{ inputs.path-scheme }}
   
 # runs:
 #   using: "composite"
