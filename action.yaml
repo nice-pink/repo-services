@@ -56,7 +56,7 @@ inputs:
 
 runs:
   using: 'docker'
-  image: 'ghcr.io/nice-pink/repo-services-deploy:latest'
+  image: 'docker://ghcr.io/nice-pink/repo-services-deploy:latest'
   entrypoint: 'app/deploy'
   args:
   - -app "${{ inputs.app }}"
