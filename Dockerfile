@@ -17,6 +17,6 @@ COPY pkg/ /app/pkg/
 # COPY test/ /app/test/
 
 # build all
-RUN /app/build
+RUN cd /app && ./build
 
-ENTRYPOINT ["/app/deploy"]
+ENTRYPOINT ["/app/bin/deploy"]
