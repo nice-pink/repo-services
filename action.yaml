@@ -49,10 +49,34 @@ inputs:
     required: false
     default: '""'
 
-  git-push:
-    description: "Push changes to GitOps repository."
+  git-url:
+    description: "URL of GitOps repository."
+    required: true
+
+  git-branch:
+    description: "Branch of GitOps repository."
     required: false
-    default: "false"
+    default: '""'
+
+  git-user:
+    description: "User name for GitOps repository."
+    required: false
+    default: "github-actions"
+
+  git-email:
+    description: "Email address for GitOps repository."
+    required: false
+    default: '""'
+
+  git-shallow-checkout:
+    description: "Shallow checkout of GitOps repository."
+    required: false
+    default: "true"
+
+  git-token:
+    description: "Token for GitOps repository."
+    required: false
+    default: '""'
 
 runs:
   using: 'docker'
@@ -67,6 +91,13 @@ runs:
   - -srcPath=${{ inputs.src-path }}
   - -tag=${{ inputs.image-tag }}
   - -pathScheme=${{ inputs.path-scheme }}
+  - -gitUrl=${{ inputs.git-url }}
+  - -gitBranch=${{ inputs.git-branch }}
+  - -gitUser=${{ inputs.git-user }}
+  - -gitEmail=${{ inputs.git-email }}
+  - -gitShallowCheckout=${{ inputs.git-shallow-checkout }}
+  - -gitToken=${{ inputs.git-token }}
+  - -gitPush
   
 # runs:
 #   using: "composite"

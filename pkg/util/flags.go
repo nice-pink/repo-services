@@ -46,6 +46,7 @@ type GitFlags struct {
 	Email      *string
 	Url        *string
 	Branch     *string
+	Token      *string
 	//Commit  *string
 }
 
@@ -58,6 +59,7 @@ func GetGitFlags() GitFlags {
 		Email:      flag.String("gitEmail", DS_GIT_EMAIL, "Git email address."),
 		Url:        flag.String("gitUrl", "", "Git url."),
 		Branch:     flag.String("gitBranch", "", "Git branch to checkout."),
+		Token:      flag.String("gitToken", "", "Git token."),
 		//Commit:  flag.String("gitCommit", "", "Git commit to checkout."),
 	}
 }
