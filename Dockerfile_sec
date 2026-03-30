@@ -29,8 +29,8 @@ LABEL org.opencontainers.image.source="https://github.com/nice-pink/"
 
 WORKDIR /app
 
-COPY --from=builder --chown=65532:65532 /app/bin/deploy /app/bin/deploy
+COPY --from=builder /app/bin/deploy /app/bin/deploy
 
-USER 65532:65532
+USER root
 
 ENTRYPOINT ["/app/bin/deploy"]
