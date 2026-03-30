@@ -19,8 +19,9 @@ COPY pkg/ ./pkg/
 # build all
 RUN ./build
 
-# FROM cgr.dev/chainguard/glibc-dynamic:latest AS runner
-FROM cgr.dev/chainguard/git:latest-root-dev AS runner
+# Minimal runtime: no Go toolchain; smaller attack surface than a single-stage golang image.
+# Use glibc-dynamic instead if you build with CGO and need dynamic libc.
+FROM cgr.dev/chainguard/static:latest AS runner
 
 # Info
 LABEL org.opencontainers.image.authors="r@nice.pink"
@@ -28,5 +29,8 @@ LABEL org.opencontainers.image.source="https://github.com/nice-pink/"
 
 WORKDIR /app
 
-# copy executable
-COPY --from=builder /app/bin/* /app/
+COPY --from=builder --chown=65532:65532 /app/bin/deploy /app/bin/deploy
+
+USER 65532:65532
+
+ENTRYPOINT ["/app/bin/deploy"]
