@@ -1,10 +1,13 @@
 package manifest
 
 import (
+	"log/slog"
+	"os"
 	"path"
+	"regexp"
+	"strings"
 
 	"github.com/nice-pink/goutil/pkg/filesystem"
-	"github.com/nice-pink/goutil/pkg/log"
 	"github.com/nice-pink/repo-services/pkg/exceptional"
 	"github.com/nice-pink/repo-services/pkg/models"
 	"github.com/nice-pink/repo-services/pkg/util"
@@ -25,13 +28,13 @@ func (h *ManifestHandler) GetCurrentTags(app models.App) string {
 	extensions := []string{".yaml"}
 	tags, err := filesystem.GetRegexInAllFiles(app.Path, false, pattern, `${2}`, extensions)
 	if err != nil {
-		log.Err(err, "get image tag")
+		slog.Default().Error("get_image_tag", "err", err)
 		return ""
 	}
 	if len(tags) > 0 {
 		return tags[0]
 	}
-	log.Info(util.LogPrefix(app), "Current tags:", tags)
+	slog.Default().Info("get_current_tags", "prefix", util.LogPrefix(app), "tags", tags)
 	return ""
 }
 
@@ -39,17 +42,17 @@ func (h *ManifestHandler) GetCurrentTag(app models.App) string {
 	pattern := h.ImagePattern(app)
 	tag, err := filesystem.GetRegexInFile(app.File, pattern, `${2}`, false)
 	if err != nil {
-		log.Err(err, "get image tag from: "+app.File)
+		slog.Default().Error("get_image_tag_from_file", "err", err, "file", app.File)
 		return ""
 	}
-	log.Info(util.LogPrefix(app), "Current tag:", tag)
+	slog.Default().Info("get_current_tag", "prefix", util.LogPrefix(app), "tag", tag)
 	return tag
 }
 
 func (h *ManifestHandler) SetTag(dest models.App) bool {
 	currentTag := h.GetCurrentTag(dest)
 	if currentTag == "" {
-		log.Error("Can't find a current tag to replace.")
+		slog.Default().Error("set_tag_no_current")
 		return false
 	}
 	var err error
@@ -62,7 +65,7 @@ func (h *ManifestHandler) SetTag(dest models.App) bool {
 	}
 
 	if err != nil {
-		log.Err(err, "Replacment error")
+		slog.Default().Error("set_tag_replacement", "err", err)
 		return false
 	}
 
@@ -71,17 +74,113 @@ func (h *ManifestHandler) SetTag(dest models.App) bool {
 		h.AddTagToHistory(dest)
 	}
 
-	log.Info(util.LogPrefix(dest), "Updated tag:", dest.Tag)
+	slog.Default().Info("set_tag_ok", "prefix", util.LogPrefix(dest), "tag", dest.Tag)
 	return true
 }
 
-func SetTagInFileWithPattern(tag, currentTag, filepath, pattern string) (replaced bool, err error) {
-	replaced, err = filesystem.ReplaceRegexInFile(filepath, pattern, `${1}`+tag, false)
+// atomicReplaceRegexInFile reads the file at filepath, applies the regex replacement,
+// and writes the result atomically via a temp file + fsync + rename.
+// This ensures no partial write is observable if the process is killed mid-write.
+func atomicReplaceRegexInFile(filePath, pattern, replacement string) (bool, error) {
+	// Read existing content
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return false, err
+	}
+
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return false, err
+	}
+
+	newContent := re.ReplaceAll(content, []byte(replacement))
+	if string(newContent) == string(content) {
+		// No change — let caller know (replaced=false)
+		return false, nil
+	}
+
+	// Write to a temp file in the same directory (same filesystem → atomic rename on POSIX)
+	dir := path.Dir(filePath)
+	tmp, err := os.CreateTemp(dir, ".manifest-*.tmp")
+	if err != nil {
+		return false, err
+	}
+	tmpName := tmp.Name()
+
+	_, writeErr := tmp.Write(newContent)
+	syncErr := tmp.Sync()
+	closeErr := tmp.Close()
+
+	if writeErr != nil || syncErr != nil {
+		os.Remove(tmpName)
+		if writeErr != nil {
+			return false, writeErr
+		}
+		return false, syncErr
+	}
+	if closeErr != nil {
+		os.Remove(tmpName)
+		return false, closeErr
+	}
+
+	if err := os.Rename(tmpName, filePath); err != nil {
+		os.Remove(tmpName)
+		return false, err
+	}
+
+	return true, nil
+}
+
+// atomicReplaceInFile replaces a plain string oldStr with newStr atomically.
+func atomicReplaceInFile(filePath, oldStr, newStr string) error {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	newContent := []byte(strings.ReplaceAll(string(content), oldStr, newStr))
+	if string(newContent) == string(content) {
+		return nil
+	}
+
+	dir := path.Dir(filePath)
+	tmp, err := os.CreateTemp(dir, ".manifest-*.tmp")
+	if err != nil {
+		return err
+	}
+	tmpName := tmp.Name()
+
+	_, writeErr := tmp.Write(newContent)
+	syncErr := tmp.Sync()
+	closeErr := tmp.Close()
+
+	if writeErr != nil || syncErr != nil {
+		os.Remove(tmpName)
+		if writeErr != nil {
+			return writeErr
+		}
+		return syncErr
+	}
+	if closeErr != nil {
+		os.Remove(tmpName)
+		return closeErr
+	}
+
+	return os.Rename(tmpName, filePath)
+}
+
+
+func SetTagInFileWithPattern(tag, currentTag, filePath, pattern string) (replaced bool, err error) {
+	// Atomic write: apply primary regex replacement.
+	replaced, err = atomicReplaceRegexInFile(filePath, pattern, "${1}"+tag)
+	if err != nil {
+		return false, err
+	}
 	if currentTag != "" {
 		// update e.g. labels, annotations, etc. - ignore error
-		filesystem.ReplaceInFile(filepath, currentTag, tag, false)
+		atomicReplaceInFile(filePath, currentTag, tag)
 	}
-	return replaced, err
+	return replaced, nil
 }
 
 func SetTagInFolderWithPattern(tag, currentTag, folder, pattern string) (replaced bool, err error) {
@@ -102,12 +201,15 @@ func (h *ManifestHandler) SetTagWithSource(src, dest models.App) bool {
 	return h.SetTag(dest)
 }
 
+// AddTagToHistory appends the tag to the app's history file.
+// Returns true on success, false on failure or if no history file is configured.
+// (Bug fix: was previously returning err != nil which was inverted.)
 func (h *ManifestHandler) AddTagToHistory(app models.App) bool {
 	if app.History == "" {
 		return false
 	}
 	err := filesystem.AppendToFile(app.History, "- "+app.Tag, true)
-	return err != nil
+	return err == nil
 }
 
 // image

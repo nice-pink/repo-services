@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/nice-pink/goutil/pkg/log"
 )
 
 // env
@@ -26,7 +25,8 @@ func GetEnvBool(key string, fallback bool) bool {
 	if !ok {
 		return fallback
 	}
-	return strings.ToLower(value) == "true"
+	value = strings.ToLower(value)
+	return value == "true"
 }
 
 // array
@@ -42,49 +42,49 @@ func RemoveFromStringArray(s []string, i int) []string {
 // network
 
 func DownloadHttp(url string, filepath string) error {
-	log.Info("http download:", url)
+	slog.Default().Info("http_download", "url", url)
 
 	out, err := os.Create(filepath)
 	if err != nil {
-		log.Err(err, "Could not create file.")
+		slog.Default().Error("http_download_create_file", "err", err)
 		return err
 	}
 	defer out.Close()
 
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Err(err, "Could not request url.")
+		slog.Default().Error("http_download_request", "err", err)
 		return err
 	}
 	defer resp.Body.Close()
 
 	// Check server response
 	if resp.StatusCode != http.StatusOK {
-		log.Error("bad status: %s", resp.Status)
+		slog.Default().Error("http_download_bad_status", "status", resp.Status)
 		return errors.New("bad status: " + resp.Status)
 	}
 
 	n, err := io.Copy(out, resp.Body)
 	if err != nil {
-		log.Err(err, "Could not copy data to file.")
+		slog.Default().Error("http_download_copy", "err", err)
 		return err
 	}
-	log.Info("Downloaded file with", n, "bytes")
+	slog.Default().Info("http_download_ok", "bytes", n)
 	return nil
 }
 
 func UploadHttp(url string, filepath string, contentType string) error {
-	log.Info("http upload", filepath, "to", url, "with content type", contentType)
+	slog.Default().Info("http_upload", "filepath", filepath, "url", url, "contentType", contentType)
 
 	file, err := os.Open(filepath)
 	if err != nil {
-		log.Err(err, "Could not read file", filepath)
+		slog.Default().Error("http_upload_open", "err", err, "filepath", filepath)
 		return err
 	}
 
 	req, err := http.NewRequest(http.MethodPut, url, file)
 	if err != nil {
-		logPutError(err)
+		slog.Default().Error("http_put_create", "err", err)
 		return err
 	}
 	req.Header.Add("Content-Type", contentType)
@@ -92,7 +92,7 @@ func UploadHttp(url string, filepath string, contentType string) error {
 	client := &http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
-		logSendError(err)
+		slog.Default().Error("http_put_send", "err", err)
 		return err
 	}
 	defer res.Body.Close()
@@ -100,9 +100,9 @@ func UploadHttp(url string, filepath string, contentType string) error {
 }
 
 func PostRequest(url string, body []byte, headers map[string]string, printBody bool) error {
-	log.Info("post", url)
+	slog.Default().Info("http_post", "url", url)
 	if printBody {
-		log.Info(string(body))
+		slog.Default().Info("http_post_body", "body", string(body))
 	}
 
 	// setup request
@@ -115,7 +115,7 @@ func PostRequest(url string, body []byte, headers map[string]string, printBody b
 		req, err = http.NewRequest(http.MethodPost, url, reader)
 	}
 	if err != nil {
-		logPutError(err)
+		slog.Default().Error("http_post_create", "err", err)
 		return err
 	}
 
@@ -128,25 +128,25 @@ func PostRequest(url string, body []byte, headers map[string]string, printBody b
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		logSendError(err)
+		slog.Default().Error("http_post_send", "err", err)
 		return err
 	}
 	defer resp.Body.Close()
 
 	bodyBytes, _ := io.ReadAll(resp.Body)
 	bodyString := string(bodyBytes)
-	log.Info(bodyString)
+	slog.Default().Info("http_post_response", "body", bodyString)
 
 	return nil
 }
 
 func GetRequest(url string, headers map[string]string) error {
-	log.Info("get", url)
+	slog.Default().Info("http_get", "url", url)
 
 	// setup request
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		logPutError(err)
+		slog.Default().Error("http_get_create", "err", err)
 		return err
 	}
 
@@ -159,24 +159,14 @@ func GetRequest(url string, headers map[string]string) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		logSendError(err)
+		slog.Default().Error("http_get_send", "err", err)
 		return err
 	}
 	defer resp.Body.Close()
 
 	bodyBytes, _ := io.ReadAll(resp.Body)
 	bodyString := string(bodyBytes)
-	log.Info(bodyString)
+	slog.Default().Info("http_get_response", "body", bodyString)
 
 	return nil
-}
-
-// errors
-
-func logPutError(err error) {
-	log.Err(err, "Could not create put request.")
-}
-
-func logSendError(err error) {
-	log.Err(err, "Could not send request.")
 }

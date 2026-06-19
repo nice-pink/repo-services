@@ -2,8 +2,8 @@ package runner
 
 import (
 	"errors"
+	"log/slog"
 
-	"github.com/nice-pink/goutil/pkg/log"
 	"github.com/nice-pink/repo-services/pkg/exceptional"
 	"github.com/nice-pink/repo-services/pkg/manifest"
 	"github.com/nice-pink/repo-services/pkg/util"
@@ -11,7 +11,7 @@ import (
 
 func Deploy(tag, exceptionalAppsFile string, flags util.GeneralFlags, gitFlags util.GitFlags) error {
 	if tag == "" {
-		log.Error("no -tag")
+		slog.Default().Error("deploy_no_tag")
 		return errors.New("no 'tag' defined")
 	}
 
@@ -28,7 +28,7 @@ func Deploy(tag, exceptionalAppsFile string, flags util.GeneralFlags, gitFlags u
 	app := handler.BuildApp(flags, tag)
 
 	// run
-	log.Info(util.GetAppDescription(app))
+	slog.Default().Info("deploy_app", "app", util.GetAppDescription(app))
 	if !handler.SetTag(app) {
 		return errors.New("could not set tag")
 	}

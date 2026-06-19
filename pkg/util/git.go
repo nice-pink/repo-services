@@ -1,7 +1,7 @@
 package util
 
 import (
-	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,17 +12,11 @@ import (
 	"github.com/go-git/go-git/v6/plumbing/object"
 	"github.com/go-git/go-git/v6/plumbing/transport/http"
 	"github.com/go-git/go-git/v6/plumbing/transport/ssh"
-	"github.com/nice-pink/goutil/pkg/log"
 )
-
-// import (
-// 	"github.com/nice-pink/goutil/pkg/log"
-// 	"github.com/nice-pink/goutil/pkg/repo"
-// )
 
 func GitPush(repoPath, msg string, gitFlags GitFlags) error {
 	if *gitFlags.Push {
-		log.Info("Push to git.")
+		slog.Default().Info("git_push", "repo", repoPath)
 		repoHandle := NewRepoHandle(*gitFlags.SshKeyPath, *gitFlags.Token, *gitFlags.User, *gitFlags.Email)
 		if err := repoHandle.CommitPushLocalRepo(repoPath, msg, true); err != nil {
 			return err
@@ -33,7 +27,7 @@ func GitPush(repoPath, msg string, gitFlags GitFlags) error {
 
 func GitClone(url, baseFolder string, flags GitFlags) error {
 	if url != "" {
-		log.Info("Git clone.")
+		slog.Default().Info("git_clone", "url", url)
 		repoHandle := NewRepoHandle(*flags.SshKeyPath, *flags.Token, *flags.User, *flags.Email)
 		if err := repoHandle.Clone(url, baseFolder, *flags.Branch, *flags.Shallow, false); err != nil {
 			return err
@@ -64,6 +58,9 @@ func NewRepoHandle(sshKeyPath, token, userName, userEmail string) *RepoHandle {
 	}
 }
 
+// Repo returns the underlying *git.Repository. May be nil before Open or Clone.
+func (g *RepoHandle) Repo() *git.Repository { return g.repo }
+
 // NOTE:
 // For save usage do:
 // - Clone() (shallow)
@@ -77,7 +74,7 @@ func (g *RepoHandle) Open(path string) error {
 	var err error
 	g.repo, err = git.PlainOpen(path)
 	if err != nil {
-		log.Err(err, "open")
+		slog.Default().Error("git_open", "err", err)
 		return err
 	}
 	return nil
@@ -95,7 +92,7 @@ func (g *RepoHandle) Clone(url string, dest string, branch string, shallow bool,
 	if g.sshKeyPath != "" {
 		auth, err := ssh.NewPublicKeysFromFile("git", g.sshKeyPath, "")
 		if err != nil {
-			log.Err(err, "key")
+			slog.Default().Error("git_clone_ssh_key", "err", err)
 			return err
 		}
 		cloneOpt.Auth = auth
@@ -125,14 +122,14 @@ func (g *RepoHandle) Clone(url string, dest string, branch string, shallow bool,
 	var err error
 	g.repo, err = git.PlainClone(dest, cloneOpt)
 	if err != nil {
-		log.Err(err, "clone")
+		slog.Default().Error("git_clone", "err", err)
 		return err
 	}
 
 	// ... retrieving the branch being pointed by HEAD
 	_, err = g.repo.Head()
 	if err != nil {
-		log.Err(err)
+		slog.Default().Error("git_head", "err", err)
 	}
 	return err
 }
@@ -142,13 +139,13 @@ func (g *RepoHandle) PullLocalRepo(path string) error {
 	var err error
 	g.repo, err = git.PlainOpen(path)
 	if err != nil {
-		log.Err(err, "open")
+		slog.Default().Error("git_open", "err", err)
 		return err
 	}
 
 	workDir, err := g.repo.Worktree()
 	if err != nil {
-		log.Err(err, "worktree")
+		slog.Default().Error("git_worktree", "err", err)
 		return err
 	}
 
@@ -169,7 +166,8 @@ func (g *RepoHandle) PullLocalRepo(path string) error {
 	if g.sshKeyPath != "" {
 		auth, err := ssh.NewPublicKeysFromFile("git", g.sshKeyPath, "")
 		if err != nil {
-			panic(err)
+			slog.Default().Error("git_pull_ssh_key", "err", err)
+			return err
 		}
 		pullOpt.Auth = auth
 		fetchOpt.Auth = auth
@@ -184,25 +182,18 @@ func (g *RepoHandle) PullLocalRepo(path string) error {
 		}
 	}
 
-	// Fetch remote
-	g.repo.Fetch(fetchOpt)
+	// Fetch remote — check return value; a network/auth error must not be silently swallowed.
+	if err := g.repo.Fetch(fetchOpt); err != nil && err != git.NoErrAlreadyUpToDate {
+		return err
+	}
 
 	err = workDir.Pull(pullOpt)
 	if err == git.NoErrAlreadyUpToDate {
 		// do nothing
 	} else if err != nil {
-		log.Err(err, "pull")
-		// err = g.ResetToRemoteHead(path)
-		// if err != nil {
-		// 	log.Err(err)
-		// } else {
-		// 	err = workDir.Pull(pullOpt)
-		// 	if err != nil {
-		// 		log.Err(err)
-		// 	}
-		// }
+		slog.Default().Error("git_pull", "err", err)
 	} else {
-		log.Info("Pulled repo.")
+		slog.Default().Info("git_pulled")
 	}
 
 	return err
@@ -214,55 +205,30 @@ func (g *RepoHandle) CommitPushLocalRepo(path string, message string, verbose bo
 	var err error
 	g.repo, err = git.PlainOpen(path)
 	if err != nil {
-		log.Err(err, "open")
+		slog.Default().Error("git_open", "err", err)
 		return err
 	}
 
 	// Get worktree
 	workDir, err := g.repo.Worktree()
 	if err != nil {
-		log.Err(err, "worktree")
+		slog.Default().Error("git_worktree", "err", err)
 		return err
 	}
-	// if verbose {
-	// 	log.Info("workDir:")
-	//  log.Info(workDir)
-	// }
-
-	// Pull remote
-	// Note: The pull overwrites the current repo and undoes all changes!
-	// if pull {
-	// 	err = workDir.Pull(&git.PullOptions{
-	// 		// RemoteName:   "origin",
-	// 		SingleBranch: true,
-	// 		Depth:        1,
-	// 		Auth:         auth,
-	// 		Force:        true,
-	// 	})
-	// 	if err == git.NoErrAlreadyUpToDate {
-	// 		// do nothing
-	// 	} else if err != nil {
-	// 		log.Err(err, "pull")
-	// 	}
-	// 	if verbose {
-	// 		log.Info("Pulled repo.")
-	// 	}
-	// }
 
 	// Get status
 	status, err := workDir.Status()
 	if err != nil {
-		log.Err(err, "status")
+		slog.Default().Error("git_status", "err", err)
 		return err
 	}
 	if verbose {
-		log.Info("status:")
-		log.Info(status.String())
+		slog.Default().Info("git_status", "status", status.String())
 	}
 
 	// Add all files, with changes.
 	for path := range status {
-		fmt.Println("Added: " + path)
+		slog.Default().Info("git_add", "path", path)
 		workDir.Add(path)
 	}
 
@@ -275,25 +241,24 @@ func (g *RepoHandle) CommitPushLocalRepo(path string, message string, verbose bo
 		},
 	})
 	if err != nil {
-		log.Err(err, "commit")
+		slog.Default().Error("git_commit", "err", err)
 		return err
 	}
 
 	// Print commit object
 	obj, err := g.repo.CommitObject(commit)
 	if err != nil {
-		log.Err(err, "commit object")
+		slog.Default().Error("git_commit_object", "err", err)
 		return err
 	}
-	fmt.Println(obj)
+	slog.Default().Info("git_commit_object", "commit", obj.String())
 
 	err = g.Push()
 	if err != nil {
 		return err
 	}
 
-	// Success!
-	fmt.Println("Success!")
+	slog.Default().Info("git_push_ok")
 	return nil
 }
 
@@ -305,7 +270,8 @@ func (g *RepoHandle) Push() error {
 		// Open key file for auth
 		auth, err := ssh.NewPublicKeysFromFile("git", g.sshKeyPath, "")
 		if err != nil {
-			panic(err)
+			slog.Default().Error("git_push_ssh_key", "err", err)
+			return err
 		}
 		pushOpt.Auth = auth
 	} else if g.token != "" {
@@ -318,7 +284,7 @@ func (g *RepoHandle) Push() error {
 	// Push
 	err := g.repo.Push(pushOpt)
 	if err != nil {
-		log.Err(err, "push")
+		slog.Default().Error("git_push", "err", err)
 	}
 	return err
 }
@@ -328,20 +294,21 @@ func (g *RepoHandle) ResetToRemoteHead(path string) error {
 	// Open key file for auth
 	auth, err := ssh.NewPublicKeysFromFile("git", g.sshKeyPath, "")
 	if err != nil {
-		panic(err)
+		slog.Default().Error("git_reset_ssh_key", "err", err)
+		return err
 	}
 
 	// Open folder as git repo
 	g.repo, err = git.PlainOpen(path)
 	if err != nil {
-		fmt.Println(err)
+		slog.Default().Error("git_open", "err", err)
 		return err
 	}
 
 	// Get worktree
 	workDir, err := g.repo.Worktree()
 	if err != nil {
-		fmt.Println(err)
+		slog.Default().Error("git_worktree", "err", err)
 		return err
 	}
 
@@ -350,13 +317,13 @@ func (g *RepoHandle) ResetToRemoteHead(path string) error {
 		Auth: auth,
 	})
 	if err != nil {
-		log.Err(err, "fetch")
+		slog.Default().Error("git_fetch", "err", err)
 	}
 
 	// Get remote head
 	remoteRef, err := g.repo.Reference(plumbing.Main, true)
 	if err != nil {
-		fmt.Print("Could not get remote head.")
+		slog.Default().Error("git_reset_remote_head", "err", err)
 		return err
 	}
 
@@ -369,8 +336,9 @@ func (g *RepoHandle) ResetToRemoteHead(path string) error {
 	// Clean git repo
 	err = workDir.Clean(&git.CleanOptions{})
 	if err != nil {
-		fmt.Println(err)
+		slog.Default().Error("git_clean", "err", err)
 	}
 
 	return nil
 }
+
