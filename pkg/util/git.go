@@ -1,6 +1,7 @@
 package util
 
 import (
+	"errors"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -135,6 +136,13 @@ func (g *RepoHandle) Clone(url string, dest string, branch string, shallow bool,
 }
 
 // Pull repo
+//
+// The ops repo grows fast (controls every app in every cluster), so we try a
+// shallow (Depth: 1) fetch first. If the local clone is more than one commit
+// behind the remote, the shallow fetch brings only the new tip and leaves its
+// parents dangling — go-git then returns plumbing.ErrObjectNotFound on the
+// merge step. In that case we fall back to an unlimited-depth fetch, which is
+// the only way to repair the ancestry chain.
 func (g *RepoHandle) PullLocalRepo(path string) error {
 	var err error
 	g.repo, err = git.PlainOpen(path)
@@ -149,54 +157,64 @@ func (g *RepoHandle) PullLocalRepo(path string) error {
 		return err
 	}
 
-	// fetch opt
-	fetchOpt := &git.FetchOptions{
-		Depth: 1,
-		Force: true,
+	err = g.fetchAndPull(workDir, 1)
+	if err == nil || err == git.NoErrAlreadyUpToDate {
+		if err == nil {
+			slog.Default().Info("git_pulled")
+		}
+		return nil
+	}
+	if !isMissingObjectErr(err) {
+		slog.Default().Error("git_pull", "err", err)
+		return err
 	}
 
-	// pull opt
-	pullOpt := &git.PullOptions{
-		SingleBranch: true,
-		Depth:        1,
-		Force:        true,
+	slog.Default().Warn("git_pull_shallow_incomplete_retrying_full", "err", err)
+	err = g.fetchAndPull(workDir, 0)
+	if err == nil || err == git.NoErrAlreadyUpToDate {
+		if err == nil {
+			slog.Default().Info("git_pulled")
+		}
+		return nil
 	}
+	slog.Default().Error("git_pull", "err", err)
+	return err
+}
 
-	// setup ssh auth
+// fetchAndPull runs a fetch + worktree pull at the given depth (0 = unlimited).
+// Auth is rebuilt per attempt so retries get a fresh handle.
+func (g *RepoHandle) fetchAndPull(workDir *git.Worktree, depth int) error {
+	fetchOpt := &git.FetchOptions{Depth: depth, Force: true}
+	pullOpt := &git.PullOptions{SingleBranch: true, Depth: depth, Force: true}
+
 	if g.sshKeyPath != "" {
 		auth, err := ssh.NewPublicKeysFromFile("git", g.sshKeyPath, "")
 		if err != nil {
 			slog.Default().Error("git_pull_ssh_key", "err", err)
 			return err
 		}
-		pullOpt.Auth = auth
 		fetchOpt.Auth = auth
+		pullOpt.Auth = auth
 	} else if g.token != "" {
-		pullOpt.Auth = &http.BasicAuth{
-			Username: "github-actions",
-			Password: g.token,
-		}
-		fetchOpt.Auth = &http.BasicAuth{
-			Username: "github-actions",
-			Password: g.token,
-		}
+		auth := &http.BasicAuth{Username: "github-actions", Password: g.token}
+		fetchOpt.Auth = auth
+		pullOpt.Auth = auth
 	}
 
-	// Fetch remote — check return value; a network/auth error must not be silently swallowed.
 	if err := g.repo.Fetch(fetchOpt); err != nil && err != git.NoErrAlreadyUpToDate {
 		return err
 	}
+	return workDir.Pull(pullOpt)
+}
 
-	err = workDir.Pull(pullOpt)
-	if err == git.NoErrAlreadyUpToDate {
-		// do nothing
-	} else if err != nil {
-		slog.Default().Error("git_pull", "err", err)
-	} else {
-		slog.Default().Info("git_pulled")
+func isMissingObjectErr(err error) bool {
+	if err == nil {
+		return false
 	}
-
-	return err
+	if errors.Is(err, plumbing.ErrObjectNotFound) {
+		return true
+	}
+	return strings.Contains(err.Error(), "object not found")
 }
 
 // Pull, commit and push repo.
