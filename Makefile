@@ -1,4 +1,4 @@
-.PHONY: build mcp-server test audit-stdout clean
+.PHONY: build test audit-stdout clean
 
 # Build all binaries (mirrors the existing build script)
 build:
@@ -9,17 +9,15 @@ build:
 		cd "$$d" && go build -o ../../bin && cd ../..; \
 	done
 
-# Build only the MCP server binary
-mcp-server:
-	mkdir -p bin/
-	cd cmd/mcp-server && go build -o ../../bin/mcp-server .
-
 # Run tests
 test:
 	go test ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
 
 # audit-stdout: verify that pkg/util, pkg/manifest, and pkg/runner contain
 # no fmt.Print*, println(, os.Stdout writes, or goutil/log imports.
+# Kept after the MCP server moved to nice-pink/ops-repo-mcp: that server
+# consumes these packages over stdio, and any stdout write here corrupts its
+# JSON-RPC framing.
 # Uses inverted grep: grep finding matches is the FAILURE case (exit 0 means
 # something was found → bad). The '! grep ...' pattern inverts this.
 #
@@ -37,4 +35,4 @@ audit-stdout:
 	@echo "PASS: audit-stdout clean"
 
 clean:
-	rm -f bin/deploy bin/promote bin/git bin/mcp-server cover.out
+	rm -f bin/deploy bin/promote bin/git cover.out
